@@ -68,7 +68,7 @@ async function main() {
     res.send("Address added to tracking");
   });
 
-  const APP_PORT = process.env.POST || 3000;
+  const APP_PORT = process.env.PORT || 3000;
 
   app.listen(APP_PORT, () => console.log(`App listening ${APP_PORT}...`));
 }
