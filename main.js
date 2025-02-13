@@ -29,7 +29,7 @@ async function main() {
 
   api.rpc.chain.subscribeFinalizedHeads(async (header) => {
     const blockNumber = Number(header.number);
-    const hash = header.hash.toHex();
+    const { hash } = await api.rpc.chain.getHeader();
 
     blocks.set(hash, blockNumber);
 
@@ -46,32 +46,34 @@ async function main() {
     }
   });
 
-  app.get("/api/balances/:address/:block_no", (req, res) => {
-    const { address, block_no } = req.params;
-    if (!trackedAddresses.has(address)) {
-      return res.status(404).send("Address not tracked");
-    }
-
-    const balanceMap = balances.get(address);
-    if (!balanceMap || !balanceMap.has(Number(block_no))) {
-      return res.status(202).send("Data not indexed yet");
-    }
-
-    res.send({ balance: balanceMap.get(Number(block_no)) });
-  });
-
-  app.post("/api/balances/:address", (req, res) => {
-    const { address } = req.params;
-    trackedAddresses.add(address);
-    fs.writeFileSync("addresses.json", JSON.stringify([...trackedAddresses]));
-
-    res.send("Address added to tracking");
-  });
-
   const APP_PORT = process.env.PORT || 3000;
 
-  app.listen(APP_PORT, () => console.log(`App listening ${APP_PORT}...`));
+  app.listen(APP_PORT, () =>
+    console.log(`App listening at ${APP_PORT} port...`),
+  );
 }
+
+app.get("/api/balances/:address/:block_no", (req, res) => {
+  const { address, block_no } = req.params;
+  if (!addresses.has(address)) {
+    return res.status(404).send("Address not tracked");
+  }
+
+  const balanceMap = balances.get(address);
+  if (!balanceMap || !balanceMap.has(Number(block_no))) {
+    return res.status(202).send("Data not indexed yet");
+  }
+
+  res.send({ balance: balanceMap.get(Number(block_no)) });
+});
+
+app.post("/api/balances/:address", (req, res) => {
+  const { address } = req.params;
+  addresses.add(address);
+  fs.writeFileSync("addresses.json", JSON.stringify([...addresses]));
+
+  res.send("Address added to tracking");
+});
 
 main()
   .catch(console.error)
